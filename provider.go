@@ -89,12 +89,12 @@ func (provider *Provider) executeTx(op func(tx *sql.Tx) error) (err error) {
 	tx, err = provider.db.Begin()
 	defer tx.Rollback()
 	if err != nil {
-		return
+		return err
 	}
 	// Execute operation
 	err = op(tx)
 	if err != nil {
-		return
+		return err
 	}
 	// Everything went fine
 	return tx.Commit()

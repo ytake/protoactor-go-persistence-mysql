@@ -1,44 +1,58 @@
 package persistencemysql
 
-type Table struct {
-	name   string
-	schema Schemaer
-}
-
-func NewTable(name string) *DefaultSchema {
-	return &DefaultSchema{
-		tableName: name,
-	}
-}
-
 // Schemaer is the interface that wraps the basic methods for a schema.
 type Schemaer interface {
-	// TableName returns the name of the table.
-	TableName() string
+	// JournalTableName returns the name of the journal table.
+	JournalTableName() string
+	// SnapshotTableName returns the name of the snapshot table.
+	SnapshotTableName() string
 	// ID returns the name of the id column.
 	ID() string
 	// Payload returns the name of the payload column.
 	Payload() string
 	// ActorName returns the name of the actor name column.
 	ActorName() string
-	// EventIndex returns the name of the event index column.
-	EventIndex() string
-	// EventName returns the name of the event name column.
-	EventName() string
+	// SequenceNumber returns the name of the sequence number column.
+	SequenceNumber() string
 	// Created returns the name of the created at column.
 	Created() string
 	// CreateTable returns the sql statement to create the table.
-	CreateTable() string
+	CreateTable() []string
+}
+
+func NewTable() *DefaultSchema {
+	return &DefaultSchema{
+		journalTable:  "journals",
+		snapshotTable: "snapshots",
+	}
+}
+
+// WithJournalTable sets the name of the journal table.
+func (d *DefaultSchema) WithJournalTable(name string) *DefaultSchema {
+	d.journalTable = name
+	return d
+}
+
+// WithSnapshotTable sets the name of the snapshot table.
+func (d *DefaultSchema) WithSnapshotTable(name string) *DefaultSchema {
+	d.snapshotTable = name
+	return d
 }
 
 // DefaultSchema is the default schema for the mysql provider.
 type DefaultSchema struct {
-	tableName string
+	journalTable  string
+	snapshotTable string
 }
 
-// TableName returns the name of the table.
-func (d *DefaultSchema) TableName() string {
-	return d.tableName
+// JournalTableName returns the name of the journal table.
+func (d *DefaultSchema) JournalTableName() string {
+	return d.journalTable
+}
+
+// SnapshotTableName returns the name of the snapshot table.
+func (d *DefaultSchema) SnapshotTableName() string {
+	return d.snapshotTable
 }
 
 // ID returns the name of the id column.
@@ -56,14 +70,9 @@ func (d *DefaultSchema) ActorName() string {
 	return "actor_name"
 }
 
-// EventIndex returns the name of the event index column.
-func (d *DefaultSchema) EventIndex() string {
-	return "event_index"
-}
-
-// EventName returns the name of the event name column.
-func (d *DefaultSchema) EventName() string {
-	return "event_name"
+// SequenceNumber returns the name of the sequence number column.
+func (d *DefaultSchema) SequenceNumber() string {
+	return "sequence_number"
 }
 
 // Created returns the name of the created at column.
@@ -72,16 +81,23 @@ func (d *DefaultSchema) Created() string {
 }
 
 // CreateTable returns the sql statement to create the table.
-func (d *DefaultSchema) CreateTable() string {
-	return "CREATE TABLE `" + d.tableName + "` (" +
-		"`" + d.ID() + "` varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL," +
-		"`" + d.Payload() + "` json NOT NULL," +
-		"`" + d.EventIndex() + "` bigint DEFAULT NULL," +
-		"`" + d.ActorName() + "` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL," +
-		"`" + d.EventName() + "` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL," +
-		"`" + d.Created() + "` timestamp DEFAULT CURRENT_TIMESTAMP," +
-		"PRIMARY KEY (`" + d.ID() + "`)," +
-		"UNIQUE KEY `uidx_id` (`" + d.ID() + "`)," +
-		"UNIQUE KEY `uidx_names` (`" + d.ActorName() + "`,`" + d.EventName() + "`,`" + d.EventIndex() + "`)" +
-		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin"
+func (d *DefaultSchema) CreateTable() []string {
+	tables := []string{
+		d.JournalTableName(),
+		d.SnapshotTableName(),
+	}
+	createTables := make([]string, 0, len(tables))
+	for _, table := range tables {
+		createTables = append(createTables, "CREATE TABLE `"+table+"` ("+
+			"`"+d.ID()+"` varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,"+
+			"`"+d.Payload()+"` json NOT NULL,"+
+			"`"+d.SequenceNumber()+"` bigint DEFAULT NULL,"+
+			"`"+d.ActorName()+"` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,"+
+			"`"+d.Created()+"` timestamp DEFAULT CURRENT_TIMESTAMP,"+
+			"PRIMARY KEY (`"+d.ID()+"`),"+
+			"UNIQUE KEY `uidx_id` (`"+d.ID()+"`),"+
+			"UNIQUE KEY `uidx_names` (`"+d.ActorName()+"`,`"+d.SequenceNumber()+"`)"+
+			") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;")
+	}
+	return createTables
 }

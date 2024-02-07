@@ -22,11 +22,6 @@ type messageEnvelope struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-const (
-	snapshotColumn = "snapshot"
-	eventColumn    = "event"
-)
-
 func newEnvelope(message proto.Message) ([]byte, error) {
 	typeName := proto.MessageName(message)
 	bytes, err := json.Marshal(message)

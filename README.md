@@ -31,7 +31,7 @@ func main() {
 	}
 	system := actor.NewActorSystem()
 	db, _ := sql.Open("mysql", conf.FormatDSN())
-	provider, _ := persistencemysql.New(3, persistencemysql.NewTable("your_table_name"), db, system.Logger())
+	provider, _ := persistencemysql.New(3, persistencemysql.NewTable(), db, system.Logger())
 
 	props := actor.PropsFromProducer(func() actor.Actor { return &Actor{} },
 		actor.WithReceiverMiddleware(persistence.Using(provider)))
@@ -46,41 +46,57 @@ func main() {
 use ulid as id(varchar(26)) and json as payload
 
 ```sql
-CREATE TABLE `your_table_name`
+CREATE TABLE `journals`
 (
-    `id`          varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-    `payload`     json                                                  NOT NULL,
-    `event_index` bigint                                                 DEFAULT NULL,
-    `actor_name`  varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-    `event_name`  varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin  DEFAULT NULL,
-    `created_at`  timestamp                                              DEFAULT CURRENT_TIMESTAMP,
+    `id`              varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+    `payload`         json                                                  NOT NULL,
+    `sequence_number` bigint                                                 DEFAULT NULL,
+    `actor_name`      varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+    `created_at`      timestamp                                              DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uidx_id` (`id`),
-    UNIQUE KEY `uidx_names` (`actor_name`,`event_name`,`event_index`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+    UNIQUE KEY `uidx_names` (`actor_name`,`sequence_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `snapshots`
+(
+    `id`              varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+    `payload`         json                                                  NOT NULL,
+    `sequence_number` bigint                                                 DEFAULT NULL,
+    `actor_name`      varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+    `created_at`      timestamp                                              DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uidx_id` (`id`),
+    UNIQUE KEY `uidx_names` (`actor_name`,`sequence_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
 ```
 
 ## change table name
 
-use the interface to change the table name
+use the interface to change the table name.
+
+for journal table and snapshot table.
 
 ```go 
+// Schemaer is the interface that wraps the basic methods for a schema.
 type Schemaer interface {
-	// TableName returns the name of the table.
-	TableName() string
-	// ID returns the name of the id column.
-	ID() string
-	// Payload returns the name of the payload column.
-	Payload() string
-	// ActorName returns the name of the actor name column.
-	ActorName() string
-	// EventIndex returns the name of the event index column.
-	EventIndex() string
-	// EventName returns the name of the event name column.
-	EventName() string
-	// Created returns the name of the created at column.
-	Created() string
-	// CreateTable returns the sql statement to create the table.
-	CreateTable() string
+    // JournalTableName returns the name of the journal table.
+    JournalTableName() string
+    // SnapshotTableName returns the name of the snapshot table.
+    SnapshotTableName() string
+    // ID returns the name of the id column.
+    ID() string
+    // Payload returns the name of the payload column.
+    Payload() string
+    // ActorName returns the name of the actor name column.
+    ActorName() string
+    // SequenceNumber returns the name of the sequence number column.
+    SequenceNumber() string
+    // Created returns the name of the created at column.
+    Created() string
+    // CreateTable returns the sql statement to create the table.
+    CreateTable() []string
 }
+
 ``` 

@@ -48,21 +48,22 @@ use ulid as id(varchar(26)) and json as payload
 ```sql
 CREATE TABLE `your_table_name`
 (
-    `id`          varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-    `payload`     json                                                  NOT NULL,
-    `event_index` bigint                                                 DEFAULT NULL,
-    `actor_name`  varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-    `event_name`  varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin  DEFAULT NULL,
-    `created_at`  timestamp                                              DEFAULT CURRENT_TIMESTAMP,
+    `id`              varchar(26) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+    `payload`         json                                                  NOT NULL,
+    `sequence_number` bigint                                                 DEFAULT NULL,
+    `actor_name`      varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+    `created_at`      timestamp                                              DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uidx_id` (`id`),
-    UNIQUE KEY `uidx_names` (`actor_name`,`event_name`,`event_index`)
+    UNIQUE KEY `uidx_names` (`actor_name`,`sequence_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 ```
 
 ## change table name
 
-use the interface to change the table name
+use the interface to change the table name.
+
+for journal table and snapshot table.
 
 ```go 
 type Schemaer interface {
@@ -74,10 +75,8 @@ type Schemaer interface {
 	Payload() string
 	// ActorName returns the name of the actor name column.
 	ActorName() string
-	// EventIndex returns the name of the event index column.
-	EventIndex() string
-	// EventName returns the name of the event name column.
-	EventName() string
+	// SequenceNumber returns the name of the sequence number column.
+	SequenceNumber() string
 	// Created returns the name of the created at column.
 	Created() string
 	// CreateTable returns the sql statement to create the table.

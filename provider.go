@@ -45,9 +45,8 @@ func (provider *Provider) selectColumns() string {
 	return strings.Join([]string{
 		provider.tableSchema.ID(),
 		provider.tableSchema.Payload(),
-		provider.tableSchema.EventIndex(),
+		provider.tableSchema.SequenceNumber(),
 		provider.tableSchema.ActorName(),
-		provider.tableSchema.EventName(),
 	}, ",")
 }
 
@@ -56,15 +55,14 @@ func (provider *Provider) GetEvents(actorName string, eventIndexStart int, event
 	defer tx.Commit()
 	rows, err := tx.Query(
 		fmt.Sprintf(
-			"SELECT %s FROM %s WHERE %s = ? AND %s = ? AND %s BETWEEN ? AND ? ORDER BY %s ASC",
+			"SELECT %s FROM %s WHERE %s = ? AND %s BETWEEN ? AND ? ORDER BY %s ASC",
 			provider.selectColumns(),
-			provider.tableSchema.TableName(),
+			provider.tableSchema.JournalTableName(),
 			provider.tableSchema.ActorName(),
-			provider.tableSchema.EventName(),
-			provider.tableSchema.EventIndex(),
-			provider.tableSchema.EventIndex(),
+			provider.tableSchema.SequenceNumber(),
+			provider.tableSchema.SequenceNumber(),
 		),
-		actorName, eventColumn, eventIndexStart, eventIndexEnd)
+		actorName, eventIndexStart, eventIndexEnd)
 	if !errors.Is(err, sql.ErrNoRows) && err != nil {
 		provider.logger.Error(err.Error(), slog.String("actor_name", actorName))
 		return
@@ -112,12 +110,12 @@ func (provider *Provider) PersistEvent(actorName string, eventIndex int, snapsho
 	err = provider.executeTx(func(tx *sql.Tx) error {
 		stmt, err := tx.Prepare(
 			fmt.Sprintf(
-				"INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?)",
-				provider.tableSchema.TableName(), provider.selectColumns()))
+				"INSERT INTO %s (%s) VALUES (?, ?, ?, ?)",
+				provider.tableSchema.JournalTableName(), provider.selectColumns()))
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(ulid.Make().String(), string(envelope), eventIndex, actorName, eventColumn)
+		_, err = stmt.Exec(ulid.Make().String(), string(envelope), eventIndex, actorName)
 		if err != nil {
 			return err
 		}
@@ -141,12 +139,12 @@ func (provider *Provider) PersistSnapshot(actorName string, eventIndex int, snap
 	err = provider.executeTx(func(tx *sql.Tx) error {
 		stmt, err := tx.Prepare(
 			fmt.Sprintf(
-				"INSERT INTO %s (%s) VALUES (?, ?, ?, ?, ?)",
-				provider.tableSchema.TableName(), provider.selectColumns()))
+				"INSERT INTO %s (%s) VALUES (?, ?, ?, ?)",
+				provider.tableSchema.SnapshotTableName(), provider.selectColumns()))
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(ulid.Make().String(), string(envelope), eventIndex, actorName, snapshotColumn)
+		_, err = stmt.Exec(ulid.Make().String(), string(envelope), eventIndex, actorName)
 		if err != nil {
 			return err
 		}
@@ -165,15 +163,13 @@ func (provider *Provider) GetSnapshot(actorName string) (snapshot interface{}, e
 	defer tx.Commit()
 	rows, err := tx.Query(
 		fmt.Sprintf(
-			"SELECT %s "+
-				"FROM %s WHERE %s = ? AND %s = ? ORDER BY %s DESC",
+			"SELECT %s FROM %s WHERE %s = ? ORDER BY %s DESC",
 			provider.selectColumns(),
-			provider.tableSchema.TableName(),
+			provider.tableSchema.SnapshotTableName(),
 			provider.tableSchema.ActorName(),
-			provider.tableSchema.EventName(),
-			provider.tableSchema.EventIndex(),
+			provider.tableSchema.SequenceNumber(),
 		),
-		actorName, snapshotColumn)
+		actorName)
 	defer rows.Close()
 	if !errors.Is(err, sql.ErrNoRows) && err != nil {
 		provider.logger.Error(err.Error(), slog.String("actor_name", actorName))
@@ -181,7 +177,7 @@ func (provider *Provider) GetSnapshot(actorName string) (snapshot interface{}, e
 	}
 	for rows.Next() {
 		env := envelope{}
-		if err := rows.Scan(&env.ID, &env.Message, &env.EventIndex, &env.ActorName, &env.EventName); err != nil {
+		if err := rows.Scan(&env.ID, &env.Message, &env.EventIndex, &env.ActorName); err != nil {
 			return nil, 0, false
 		}
 		m, err := env.message()

@@ -69,7 +69,7 @@ func (provider *Provider) GetEvents(actorName string, eventIndexStart int, event
 	}
 	for rows.Next() {
 		env := &envelope{}
-		if err := rows.Scan(&env.ID, &env.Message, &env.EventIndex, &env.ActorName, &env.EventName); err != nil {
+		if err := rows.Scan(&env.ID, &env.Message, &env.EventIndex, &env.ActorName); err != nil {
 			return
 		}
 		m, err := env.message()

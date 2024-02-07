@@ -8,7 +8,7 @@ CREATE TABLE `journals`
     PRIMARY KEY (`id`),
     UNIQUE KEY `uidx_id` (`id`),
     UNIQUE KEY `uidx_names` (`actor_name`,`sequence_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `snapshots`
 (
@@ -20,4 +20,4 @@ CREATE TABLE `snapshots`
     PRIMARY KEY (`id`),
     UNIQUE KEY `uidx_id` (`id`),
     UNIQUE KEY `uidx_names` (`actor_name`,`sequence_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

@@ -30,7 +30,7 @@ func TestProvider_PersistEvent(t *testing.T) {
 	db, _ := sql.Open("mysql", config.FormatDSN())
 	defer db.Close()
 	defer db.Exec("TRUNCATE tests")
-	provider, _ := New(3, NewTable("tests"), db, nil)
+	provider, _ := New(3, NewTable(), db, nil)
 	evt := &testdata.UserCreated{
 		UserID:   ulid.Make().String(),
 		UserName: "test",
@@ -55,7 +55,7 @@ func TestProvider_PersistSnapshot(t *testing.T) {
 	db, _ := sql.Open("mysql", config.FormatDSN())
 	defer db.Close()
 	defer db.Exec("TRUNCATE tests")
-	provider, _ := New(3, NewTable("tests"), db, nil)
+	provider, _ := New(3, NewTable(), db, nil)
 	evt := &testdata.UserCreated{
 		UserID:   ulid.Make().String(),
 		UserName: "test",

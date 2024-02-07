@@ -1,9 +1,5 @@
 package persistencemysql
 
-type Table struct {
-	schema Schemaer
-}
-
 // Schemaer is the interface that wraps the basic methods for a schema.
 type Schemaer interface {
 	// JournalTableName returns the name of the journal table.

@@ -101,7 +101,7 @@ func (provider *Provider) executeTx(op func(tx *sql.Tx) error) (err error) {
 }
 
 func (provider *Provider) PersistEvent(actorName string, eventIndex int, snapshot proto.Message) {
-	envelope, err := newEnvelope(snapshot)
+	bytes, err := newByte(snapshot)
 	if err != nil {
 		provider.logger.Error(
 			fmt.Sprintf("persistence error: %s", err), slog.String("actor_name", actorName))
@@ -115,7 +115,7 @@ func (provider *Provider) PersistEvent(actorName string, eventIndex int, snapsho
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(ulid.Make().String(), string(envelope), eventIndex, actorName)
+		_, err = stmt.Exec(ulid.Make().String(), string(bytes), eventIndex, actorName)
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func (provider *Provider) PersistEvent(actorName string, eventIndex int, snapsho
 }
 
 func (provider *Provider) PersistSnapshot(actorName string, eventIndex int, snapshot proto.Message) {
-	envelope, err := newEnvelope(snapshot)
+	bytes, err := newByte(snapshot)
 	if err != nil {
 		provider.logger.Error(
 			fmt.Sprintf("persistence error: %s", err), slog.String("actor_name", actorName))
@@ -144,7 +144,7 @@ func (provider *Provider) PersistSnapshot(actorName string, eventIndex int, snap
 		if err != nil {
 			return err
 		}
-		_, err = stmt.Exec(ulid.Make().String(), string(envelope), eventIndex, actorName)
+		_, err = stmt.Exec(ulid.Make().String(), string(bytes), eventIndex, actorName)
 		if err != nil {
 			return err
 		}

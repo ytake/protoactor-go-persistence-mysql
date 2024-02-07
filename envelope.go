@@ -11,7 +11,7 @@ import (
 // struct
 type envelope struct {
 	ID         string
-	Message    string
+	Message    json.RawMessage
 	EventIndex int
 	ActorName  string
 	EventName  string
@@ -22,7 +22,7 @@ type messageEnvelope struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-func newEnvelope(message proto.Message) ([]byte, error) {
+func newByte(message proto.Message) ([]byte, error) {
 	typeName := proto.MessageName(message)
 	bytes, err := json.Marshal(message)
 	if err != nil {

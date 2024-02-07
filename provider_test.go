@@ -28,8 +28,10 @@ func mysqlConfig() mysql.Config {
 func TestProvider_PersistEvent(t *testing.T) {
 	config := mysqlConfig()
 	db, _ := sql.Open("mysql", config.FormatDSN())
-	defer db.Exec("TRUNCATE tests")
-	defer db.Close()
+	t.Cleanup(func() {
+		db.Exec("TRUNCATE journals")
+		db.Close()
+	})
 	provider, _ := New(3, NewTable(), db, nil)
 	evt := &testdata.UserCreated{
 		UserID:   ulid.Make().String(),
@@ -53,8 +55,10 @@ func TestProvider_PersistEvent(t *testing.T) {
 func TestProvider_PersistSnapshot(t *testing.T) {
 	config := mysqlConfig()
 	db, _ := sql.Open("mysql", config.FormatDSN())
-	defer db.Exec("TRUNCATE tests")
-	defer db.Close()
+	t.Cleanup(func() {
+		db.Exec("TRUNCATE snapshots")
+		db.Close()
+	})
 	provider, _ := New(3, NewTable(), db, nil)
 	evt := &testdata.UserCreated{
 		UserID:   ulid.Make().String(),

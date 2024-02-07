@@ -1,4 +1,4 @@
-module github.com/ytake/protoactor-go-persistence-mysql
+module github.com/ytake/protoactor-go-persistence-mysql/persistencemysql
 
 go 1.21.6
 

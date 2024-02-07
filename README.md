@@ -13,7 +13,7 @@ import (
 	"github.com/asynkron/protoactor-go/actor"
 	"github.com/asynkron/protoactor-go/persistence"
 	"github.com/go-sql-driver/mysql"
-	"github.com/ytake/protoactor-go-persistence-mysql/persistencemysql"
+	"github.com/ytake/protoactor-go-persistence-mysql"
 )
 
 type Actor struct {

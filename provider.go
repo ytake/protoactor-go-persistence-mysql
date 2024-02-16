@@ -53,16 +53,26 @@ func (provider *Provider) selectColumns() string {
 func (provider *Provider) GetEvents(actorName string, eventIndexStart int, eventIndexEnd int, callback func(e interface{})) {
 	tx, _ := provider.db.Begin()
 	defer tx.Commit()
-	rows, err := tx.Query(
-		fmt.Sprintf(
-			"SELECT %s FROM %s WHERE %s = ? AND %s BETWEEN ? AND ? ORDER BY %s ASC",
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s = ? AND %s BETWEEN ? AND ? ORDER BY %s ASC",
+		provider.selectColumns(),
+		provider.tableSchema.JournalTableName(),
+		provider.tableSchema.ActorName(),
+		provider.tableSchema.SequenceNumber(),
+		provider.tableSchema.SequenceNumber(),
+	)
+	args := []interface{}{actorName, eventIndexStart, eventIndexEnd}
+	if eventIndexEnd == 0 {
+		query = fmt.Sprintf(
+			"SELECT %s FROM %s WHERE %s = ? AND %s >= ? ORDER BY %s ASC",
 			provider.selectColumns(),
 			provider.tableSchema.JournalTableName(),
 			provider.tableSchema.ActorName(),
 			provider.tableSchema.SequenceNumber(),
-			provider.tableSchema.SequenceNumber(),
-		),
-		actorName, eventIndexStart, eventIndexEnd)
+			provider.tableSchema.SequenceNumber())
+		args = []interface{}{actorName, eventIndexStart}
+	}
+	rows, err := tx.Query(query, args...)
 	if !errors.Is(err, sql.ErrNoRows) && err != nil {
 		provider.logger.Error(err.Error(), slog.String("actor_name", actorName))
 		return
